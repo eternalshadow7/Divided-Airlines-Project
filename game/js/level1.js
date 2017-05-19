@@ -10,6 +10,16 @@ Level1.prototype =
         //Create Objects and their Physics
         game.background = game.add.image(0,0,'background');
 
+
+        //Create a custom timer
+        levelTimer = game.time.create();
+
+        //Create a delayed event 1m and 30s from now
+        levelTimerEvent = levelTimer.add(Phaser.Timer.MINUTE * 0 + Phaser.Timer.SECOND *30, this.endLevelTimer, this);
+
+        //Start the timer
+        levelTimer.start();
+
         //Create door that triggers level transition
         door = game.add.sprite(game.world.width - 65, game.world.height - 100, 'door');
         game.physics.arcade.enable(door);
@@ -27,7 +37,6 @@ Level1.prototype =
 
         //Player properties
         game.physics.arcade.enable(player); //Physics for Player
-        player.body.gravity.y = 100;
         player.body.collideWorldBounds = true;
 
         //Make Enemy
@@ -41,13 +50,13 @@ Level1.prototype =
 
         //Enemy properties
         game.physics.arcade.enable(enemy);
-        enemy.body.gravity.y = 100;
-        enemy.body.collideWorldBounds = true;
 
         //Input manager
         cursors = game.input.keyboard.createCursorKeys();
         sAttack = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
     },
+
+
     update: function()
     {
         //Collision and overlap detection
@@ -57,23 +66,59 @@ Level1.prototype =
         //Enemy move toward player
         game.physics.arcade.moveToObject(enemy, player, 100);
 
-        //Accend and Descend Controls
+        //Movement Controls
         player.body.velocity.x = 0; //Default
+        player.body.velocity.y = 0;
 
+        if (cursors.left.isUp && cursors.right.isUp && cursors.up.isUp && cursors.down.isUp)
+        {
+            player.animations.stop();
+        }
         if (cursors.left.isDown) //Left
         {
             player.body.velocity.x = -150;
             player.animations.play('left');
+            isLeft = true;
+            isRight = false;
         }
-        else if (cursors.right.isDown) //Right
+        if (cursors.right.isDown) //Right
         {
             player.body.velocity.x = 150;
             player.animations.play('right');
+            isRight = true;
+            isLeft = false;
         }
-        else //Stop
+        if (cursors.up.isDown) //Up
         {
-            player.animations.stop();
-            player.frame = 4;
+            player.body.velocity.y = -150;
+
+            if (isRight)
+            {
+                player.animations.play('right');
+            }
+            else
+            {
+                player.animations.play('left');
+            }
+        }
+        if (cursors.down.isDown) //Down
+        {
+            player.body.velocity.y = 150;
+
+            if (isRight)
+            {
+                player.animations.play('right');
+            }
+            else
+            {
+                player.animations.play('left');
+            }
+        }
+
+        //Floor Constraints
+        if (player.body.y < 400)
+        {
+            player.body.y = 400;
         }
 
         //Activate rage mode on button press (attack)
@@ -87,5 +132,66 @@ Level1.prototype =
             player.tint = 0xFFFFFF;
             isAttacking = false;
         }
+
+        if (player.body.x < 1250 && player.body.x > 1200)
+        {
+            lock1 = true;
+        }
+
+        //Screen Lock 1
+        if (lock1 && lock1Pending)
+        {
+            game.camera.deadzone = new Phaser.Rectangle(0, 0, 800, 600);
+
+            //Lock bounds
+            if (player.body.x < 800)
+            {
+                player.body.x = 800;
+            }
+
+            if (player.body.x > 1600)
+            {
+                player.body.x = 1600;
+            }
+
+            //Create enemies
+            spawnEnemies();
+
+            //Release lock
+            if (aliveEnemies == 0)
+            {
+                lock1 = false;
+                lock1Pending = false;
+            }
+        }
+        else if (!lock1)
+        {
+            game.camera.deadzone = new Phaser.Rectangle(395, 400, 5, 200);
+        }
+    },
+
+	render: function() {
+
+    //Prints out the timer
+		if (levelTimer.running) {
+            game.debug.text("Time left: "+this.formatLevelTime(Math.round((levelTimerEvent.delay - levelTimer.ms) / 1000)), 32, 32, "#ffffff");
+        }
+    //If the timer reaches 0, print this out
+        else {
+            //goToLoseState();
+            //game.state.start('Lose');
+            game.debug.text("Time's up!", 32,32, '#ffffff');
+        }
+    },
+    endLevelTimer: function() {
+        //This stops the timer when the delayed event triggers
+        //levelTimer.stop();
+        goToLoseState();
+    },
+    formatLevelTime: function(s) {
+        //This converts the seconds (s) to a nicely formatted and padded time string
+        var minutes = "0" + Math.floor(s / 60);
+        var seconds = "0" + (s - minutes * 60);
+        return minutes.substr(-2) + ":" + seconds.substr(-2);
     }
 };
