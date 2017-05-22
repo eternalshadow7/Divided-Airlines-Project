@@ -19,6 +19,6 @@ MainMenu.prototype =
     playTime: function()
     {
         //Starts game on button press
-        game.state.start('Level1');
+        game.state.start('Level1Part1');
     }
 };

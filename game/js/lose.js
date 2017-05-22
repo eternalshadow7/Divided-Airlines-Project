@@ -4,6 +4,8 @@ Lose.prototype =
 {
     create: function()
     {
+        game.music.stop();
+
         //Prompt for Replay
         game.add.text(230, 200, "You died: Restart?",
             {font: '30px Arial', fill: '#ffffff'});
@@ -18,6 +20,15 @@ Lose.prototype =
     },
     Again: function()
     {
+        //Reset Variables
+        isAttacking = false;
+        isLeft = false;
+        isRight = false;
+
+        lock1 = false;
+        lock1Pending = true;
+        lock1Spawn = true;
+
         //Move to MainMenu
         game.state.start('MainMenu');
     }
